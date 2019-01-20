@@ -8,7 +8,7 @@ const port = process.env.PORT || 3001;
 app.use("/static", express.static(__dirname + "/static"));
 
 //sticctionary game
-app.get("/", (req, res) => {
+app.get("/sticc", (req, res) => {
   res.sendFile(__dirname + "/index.html");
 });
 
