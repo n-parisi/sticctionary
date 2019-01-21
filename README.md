@@ -1,3 +1,1 @@
 # sticctionary
-
-test commit!
