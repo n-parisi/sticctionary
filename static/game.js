@@ -174,105 +174,108 @@ function floodFill(dataX, dataY, dataColor) {
 	};
 	x = dataX;
 	y = dataY;
-	// Set area to check //
-	searchArea = context.getImageData(0, 0, canvas.width, canvas.height);
-	// Go up from original point until finding a boundary //
-	// Use linear coordinates //
-	linearCoords = ((y) * canvas.width + x) * 4;
-	var done = false ;
-	while((y >= 0) && (!done)) {
-		// Update position //
-		var newLinearCoords = ((y - 1) * canvas.width + x) * 4;
-		// Check for no boundary //
-		if ((searchArea.data[newLinearCoords] == originalColor.r) && (searchArea.data[newLinearCoords + 1] == originalColor.g) && (searchArea.data[newLinearCoords + 2] == originalColor.b) && (searchArea.data[newLinearCoords+3]==originalColor.a)) {
-			y = y - 1;
-			linearCoords = newLinearCoords;
-		}
-		else {
-			done = true;
-		}
-	}
-	// Loop around counter-clockwise until returning to starting position //
-	// This essentially traces the outline of the boundary, and then fills it in //
-	var path = [{x:x, y:y}];
-	var firstIteration = true;
-	var iterationCount = 0;
-	// 0 = up, 1 = left, 2 = down, 3 = right //
-	var orientation = 1;
-	while (!((path[path.length - 1].x == path[0].x) && (path[path.length - 1].y == path[0].y)) || (firstIteration)) {
-		iterationCount++;
-		firstIteration = false;
-		var completed = false;
-		// Determine which direction we are currently pointing //
-		if(path.length >= 2) {
-			if (path[path.length - 1].y - path[path.length - 2].y < 0) {
-				orientation = 0;
-			}
-			else if (path[path.length - 1].x - path[path.length - 2].x < 0) {
-				orientation = 1;
-			}
-			else if (path[path.length - 1].y - path[path.length - 2].y > 0) {
-				orientation = 2;
-			}
-			else if (path[path.length - 1].x - path[path.length - 2].x > 0) {
-				orientation = 3;
+	// Only call algorithm if the area selected is a different color from the desired paint fill //
+	if ((originalColor.r != dataColor.r) || (originalColor.g != dataColor.g) || (originalColor.b != dataColor.b) || (originalColor.a != dataColor.a)) {
+		// Set area to check //
+		searchArea = context.getImageData(0, 0, canvas.width, canvas.height);
+		// Go up from original point until finding a boundary //
+		// Use linear coordinates //
+		linearCoords = ((y) * canvas.width + x) * 4;
+		var done = false ;
+		while((y >= 0) && (!done)) {
+			// Update position //
+			var newLinearCoords = ((y - 1) * canvas.width + x) * 4;
+			// Check for no boundary //
+			if ((searchArea.data[newLinearCoords] == originalColor.r) && (searchArea.data[newLinearCoords + 1] == originalColor.g) && (searchArea.data[newLinearCoords + 2] == originalColor.b) && (searchArea.data[newLinearCoords+3]==originalColor.a)) {
+				y = y - 1;
+				linearCoords = newLinearCoords;
 			}
 			else {
-				//
+				done = true;
 			}
 		}
-		// Begin checking where to go next //
-		// If we can't find a place to go, change the direction and check again //
-		for (var i = 0; (!completed) && (i <= 3); i++) {
-			var newOrientation = (orientation + i) % 4;
-			if (newOrientation == 0) {
-				// Try the right //
-				if ((!completed) && (x + 1 < canvas.width)) {
-					linearCoords = (y * canvas.width + (x + 1)) * 4;
-					if ((searchArea.data[linearCoords] == originalColor.r) && (searchArea.data[linearCoords + 1] == originalColor.g) && (searchArea.data[linearCoords + 2] == originalColor.b) && (searchArea.data[linearCoords + 3] == originalColor.a)) {
-						completed = true;
-						x = x + 1;
+		// Loop around counter-clockwise until returning to starting position //
+		// This essentially traces the outline of the boundary, and then fills it in //
+		var path = [{x:x, y:y}];
+		var firstIteration = true;
+		var iterationCount = 0;
+		// 0 = up, 1 = left, 2 = down, 3 = right //
+		var orientation = 1;
+		while (!((path[path.length - 1].x == path[0].x) && (path[path.length - 1].y == path[0].y)) || (firstIteration)) {
+			iterationCount++;
+			firstIteration = false;
+			var completed = false;
+			// Determine which direction we are currently pointing //
+			if(path.length >= 2) {
+				if (path[path.length - 1].y - path[path.length - 2].y < 0) {
+					orientation = 0;
+				}
+				else if (path[path.length - 1].x - path[path.length - 2].x < 0) {
+					orientation = 1;
+				}
+				else if (path[path.length - 1].y - path[path.length - 2].y > 0) {
+					orientation = 2;
+				}
+				else if (path[path.length - 1].x - path[path.length - 2].x > 0) {
+					orientation = 3;
+				}
+				else {
+					//
+				}
+			}
+			// Begin checking where to go next //
+			// If we can't find a place to go, change the direction and check again //
+			for (var i = 0; (!completed) && (i <= 3); i++) {
+				var newOrientation = (orientation + i) % 4;
+				if (newOrientation == 0) {
+					// Try the right //
+					if ((!completed) && (x + 1 < canvas.width)) {
+						linearCoords = (y * canvas.width + (x + 1)) * 4;
+						if ((searchArea.data[linearCoords] == originalColor.r) && (searchArea.data[linearCoords + 1] == originalColor.g) && (searchArea.data[linearCoords + 2] == originalColor.b) && (searchArea.data[linearCoords + 3] == originalColor.a)) {
+							completed = true;
+							x = x + 1;
+						}
+					}
+				}
+				else if (newOrientation == 1) {
+					// Try up //
+					if ((!completed) && (y - 1 >= 0)) {
+						linearCoords = ((y - 1) * canvas.width + x) * 4;
+						if ((searchArea.data[linearCoords] == originalColor.r) && (searchArea.data[linearCoords + 1] == originalColor.g) && (searchArea.data[linearCoords + 2] == originalColor.b) && (searchArea.data[linearCoords + 3] == originalColor.a)) {
+							completed = true;
+							y = y - 1;
+						}
+					}
+				}
+				else if (newOrientation == 2) {
+					// Try the left //
+					if ((!completed) && (x - 1 >= 0)) {
+						linearCoords = (y * canvas.width + (x - 1)) * 4;
+						if ((searchArea.data[linearCoords] == originalColor.r) && (searchArea.data[linearCoords + 1] == originalColor.g) && (searchArea.data[linearCoords + 2] == originalColor.b) && (searchArea.data[linearCoords + 3] == originalColor.a)) {
+							completed = true;
+							x = x - 1;
+						}
+					}
+				}
+				else if (newOrientation == 3) {
+					// Try down //
+					if((!completed) && (y + 1 < canvas.height)) {
+						linearCoords = ((y + 1) * canvas.width + x) * 4;
+						if ((searchArea.data[linearCoords] == originalColor.r) && (searchArea.data[linearCoords + 1] == originalColor.g) && (searchArea.data[linearCoords + 2] == originalColor.b) && (searchArea.data[linearCoords + 3] == originalColor.a)) {
+							completed = true;
+							y = y + 1;
+						}
 					}
 				}
 			}
-			else if (newOrientation == 1) {
-				// Try up //
-				if ((!completed) && (y - 1 >= 0)) {
-					linearCoords = ((y - 1) * canvas.width + x) * 4;
-					if ((searchArea.data[linearCoords] == originalColor.r) && (searchArea.data[linearCoords + 1] == originalColor.g) && (searchArea.data[linearCoords + 2] == originalColor.b) && (searchArea.data[linearCoords + 3] == originalColor.a)) {
-						completed = true;
-						y = y - 1;
-					}
-				}
-			}
-			else if (newOrientation == 2) {
-				// Try the left //
-				if ((!completed) && (x - 1 >= 0)) {
-					linearCoords = (y * canvas.width + (x - 1)) * 4;
-					if ((searchArea.data[linearCoords] == originalColor.r) && (searchArea.data[linearCoords + 1] == originalColor.g) && (searchArea.data[linearCoords + 2] == originalColor.b) && (searchArea.data[linearCoords + 3] == originalColor.a)) {
-						completed = true;
-						x = x - 1;
-					}
-				}
-			}
-			else if (newOrientation == 3) {
-				// Try down //
-				if((!completed) && (y + 1 < canvas.height)) {
-					linearCoords = ((y + 1) * canvas.width + x) * 4;
-					if ((searchArea.data[linearCoords] == originalColor.r) && (searchArea.data[linearCoords + 1] == originalColor.g) && (searchArea.data[linearCoords + 2] == originalColor.b) && (searchArea.data[linearCoords + 3] == originalColor.a)) {
-						completed = true;
-						y = y + 1;
-					}
-				}
+			// If possible, continue the path //
+			if( completed ) {
+				path.push({x:x, y:y});
 			}
 		}
-		// If possible, continue the path //
-		if( completed ) {
-			path.push({x:x, y:y});
-		}
+		// Once done, draw the quadratic curve, and fill it with the chosen color //
+		drawQuadCurve(path, context, dataColor, 5, dataColor);
 	}
-	// Once done, draw the quadratic curve, and fill it with the chosen color //
-	drawQuadCurve(path, context, dataColor, 5, dataColor);
 }
 
 // Draw quadratic curve function // 
