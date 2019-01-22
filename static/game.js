@@ -13,14 +13,25 @@ var drawer = {
 	filling: false,
 	myColor: 'black'
 };
+var lastDrawer = {
+	clicking: false,
+	x: 0,
+	y: 0,
+	clearing: true,
+	filling: false,
+	myColor: 'black'
+};
 var justCleared = false;
 var justClicked = false;
+var justFilled = false;
 var colorpicker = document.getElementById('colorBtn');
 var canvas = document.getElementById('canvas');
 canvas.width = 800;
 canvas.height = 600;
 var last_data_size = 1;
 var context = canvas.getContext('2d');
+var justFilledX = 0;
+var justFilledY = 0;
 
 /////////////////////
 // Event Listeners //
@@ -64,7 +75,9 @@ setInterval(function() {
 	// Grab color value from color picker //
 	drawer.myColor = colorpicker.value;
 	if (justClicked) {
-		socket.emit('drawer', drawer);
+		if ((drawer.clicking != lastDrawer.clicking) || (drawer.x != lastDrawer.x) || (drawer.y != lastDrawer.y) || (drawer.clearing != lastDrawer.clearing) || (drawer.filling != lastDrawer.filling) || (drawer.myColor != lastDrawer.myColor)) {
+			socket.emit('drawer', drawer);
+		}
 		if (!drawer.clicking) {
 			justClicked = false;
 		}
@@ -77,6 +90,12 @@ setInterval(function() {
 	if (drawer.clearing == true) {
 		justCleared = true;
 	}
+	lastDrawer.clicking = drawer.clicking;
+	lastDrawer.x = drawer.x;
+	lastDrawer.y = drawer.y;
+	lastDrawer.clearing = drawer.clearing;
+	lastDrawer.filling = drawer.filling;
+	lastDrawer.myColor = drawer.myColor
 }, 10);
 
 ////////////////////
@@ -87,23 +106,33 @@ setInterval(function() {
 socket.on('state', function(data) {
 	// Only draw the last two points, prevents redrawing all points //
 	if (data.x.length == 0) { context.clearRect(0, 0, canvas.width, canvas.height); }
-	for (i = last_data_size - 1; i < (data.x.length - 1); i++)
+	for (i = last_data_size - 2; i <= (data.x.length); i++)
 	{
 		// This uses the coordinates (0,0) to designate the end of a line segment //
 		// This checks to make sure neither of the two points are the end of a segment //
-		if ((data.x[i] != -1) && (data.y[i] != -1) && (data.x[i + 1] != -1) && (data.y[i + 1] != -1) && !data.beingFilled[i]) {
+		if ((data.x[i] != -1) && (data.y[i] != -1) && (data.x[i - 1] != -1) && (data.y[i - 1] != -1) && !data.beingFilled[i]) {
 			context.strokeStyle = data.colors[i];
 			context.fillStyle = data.colors[i];
 			context.lineWidth = 10;
 			context.beginPath();
 			context.moveTo(data.x[i], data.y[i]);
-			context.lineTo(data.x[i + 1], data.y[i + 1]);
+			context.lineTo(data.x[i - 1], data.y[i - 1]);
 			context.stroke();
 			context.beginPath();
 			context.arc(data.x[i], data.y[i], 5, 0, 2 * Math.PI);
 			context.fill();
 			context.beginPath();
-			context.arc(data.x[i + 1], data.y[i + 1], 5, 0, 2 * Math.PI);
+			context.arc(data.x[i - 1], data.y[i - 1], 5, 0, 2 * Math.PI);
+			context.fill();
+		}
+		else if ((data.x[i] != -1) && (data.y[i] != -1) && (data.x[i - 1] == -1) && (data.y[i - 1] == -1) && !data.beingFilled[i]) {
+			context.beginPath();
+			context.arc(data.x[i], data.y[i], 5, 0, 2 * Math.PI);
+			context.fill();
+		}
+		else if ((data.x[i] == -1) && (data.y[i] == -1) && (data.x[i - 1] != -1) && (data.y[i - 1] != -1) && !data.beingFilled[i]) {
+			context.beginPath();
+			context.arc(data.x[i - 1], data.y[i - 1], 5, 0, 2 * Math.PI);
 			context.fill();
 		}
 		// If the point signifies a fill point, call the flood fill algorithm //
@@ -112,7 +141,12 @@ socket.on('state', function(data) {
 			floodFill(data.x[i], data.y[i], colorToRBGa(data.colors[i]));
 		}
 	}
-	last_data_size = data.x.length;
+	if (data.beingFilled[data.x.length - 1]) {
+		last_data_size = data.x.length + 2;
+	}
+	else {
+		last_data_size = data.x.length;
+	}
 });
 
 /////////////
@@ -144,7 +178,7 @@ function floodFill(dataX, dataY, dataColor) {
 	searchArea = context.getImageData(0, 0, canvas.width, canvas.height);
 	// Go up from original point until finding a boundary //
 	// Use linear coordinates //
-	linearCoords = (y * canvas.width + x) * 4;
+	linearCoords = ((y) * canvas.width + x) * 4;
 	var done = false ;
 	while((y >= 0) && (!done)) {
 		// Update position //
