@@ -91,7 +91,7 @@ socket.on('state', function(data) {
 	{
 		// This uses the coordinates (0,0) to designate the end of a line segment //
 		// This checks to make sure neither of the two points are the end of a segment //
-		if ((data.x[i] != 0) && (data.y[i] != 0) && (data.x[i + 1] != 0) && (data.y[i + 1] != 0) && !data.beingFilled[i]) {
+		if ((data.x[i] != -1) && (data.y[i] != -1) && (data.x[i + 1] != -1) && (data.y[i + 1] != -1) && !data.beingFilled[i]) {
 			context.strokeStyle = data.colors[i];
 			context.fillStyle = data.colors[i];
 			context.lineWidth = 10;
