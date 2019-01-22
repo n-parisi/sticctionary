@@ -4,18 +4,18 @@ const path = require("path");
 const socketIO = require("socket.io");
 
 module.exports = server => {
-  var io = socketIO.listen(server);
+	var io = socketIO.listen(server);
 
-  // Initialization //
-  var players = {};
-  var justClicked = false;
-  var justFilled = 0;
-  var points = {
-    x: [],
-    y: [],
-    colors: [],
-    beingFilled: []
-  };
+	// Initialization //
+	var players = {};
+	var justClicked = false;
+	var justFilled = 0;
+	var points = {
+		x: [],
+		y: [],
+		colors: [],
+		beingFilled: []
+	};
 
   //TODO: add variable identifiers
   // Check socket //
@@ -31,7 +31,7 @@ module.exports = server => {
       // If the drawer was clicking, record point data //
       if (data.clicking) {
         temp = points.x.length;
-        if (justClicked && justFilled > 1) {
+        if (justClicked && justFilled > 0) {
           points.beingFilled[temp] = false;
         } else {
           points.beingFilled[temp] = data.filling;
