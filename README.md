@@ -1,6 +1,6 @@
 # sticctionary
 
-testing branch perms
+Nick Parisi, Alex Parisi, Mike Kozicky
 
 <h2>Contribute</h2>
 
@@ -43,4 +43,4 @@ npm install
 npm start
 ```
 
-Game will be hosted on http://localhost:3000/sticc
+Game will be hosted on http://localhost:3001/sticc
