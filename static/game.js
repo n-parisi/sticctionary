@@ -185,7 +185,7 @@ function floodFill(x, y, color) {
       imageCoords = (y * canvas.width + x) * 4;
       // Start checking downwards //
       while ((y-- >= 0) && ((canvasPixels.data[imageCoords] == originalColor.r) && (canvasPixels.data[imageCoords + 1] == originalColor.g) && (canvasPixels.data[imageCoords + 2] == originalColor.b) && (canvasPixels.data[imageCoords + 3] == originalColor.a))) {
-              imageCoords -= canvas.width * 4;
+        imageCoords -= canvas.width * 4;
       }
       imageCoords += canvas.width * 4;
       y++;
