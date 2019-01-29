@@ -1,0 +1,29 @@
+body {
+  background-image: url("bg.jpg");
+}
+canvas {
+  width: 800px;
+  height: 600px;
+  border: 5px solid black;
+  background-color: white;
+}
+.pure-button {
+  font-size: 150%;
+}
+
+.clear-button,
+.fill-button {
+  color: white;
+  border-radius: 4px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.clear-button {
+  background: red;
+}
+.fill-button {
+  background: blue;
+}
+.option-bar {
+  padding-left: 200px;
+}
