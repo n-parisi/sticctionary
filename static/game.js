@@ -121,13 +121,7 @@ socket.on("state", function(data) {
   for (i = last_data_size - 2; i <= data.x.length; i++) {
     // This uses the coordinates (0,0) to designate the end of a line segment //
     // This checks to make sure neither of the two points are the end of a segment //
-    if (
-      data.x[i] != -1 &&
-      data.y[i] != -1 &&
-      data.x[i - 1] != -1 &&
-      data.y[i - 1] != -1 &&
-      !data.beingFilled[i]
-    ) {
+    if ((data.x[i] != -1) && (data.y[i] != -1) && (data.x[i - 1] != -1) && (data.y[i - 1] != -1) && !data.beingFilled[i] && !data.beingFilled[i - 1])  {
       context.strokeStyle = data.colors[i];
       context.fillStyle = data.colors[i];
       context.lineWidth = 10;
@@ -151,13 +145,8 @@ socket.on("state", function(data) {
       context.beginPath();
       context.arc(data.x[i], data.y[i], 5, 0, 2 * Math.PI);
       context.fill();
-    } else if (
-      data.x[i] == -1 &&
-      data.y[i] == -1 &&
-      data.x[i - 1] != -1 &&
-      data.y[i - 1] != -1 &&
-      !data.beingFilled[i]
-    ) {
+    }
+    else if ((data.x[i] == -1) && (data.y[i] == -1) && (data.x[i - 1] != -1) && (data.y[i - 1] != -1) && !data.beingFilled[i - 1]) {
       context.beginPath();
       context.arc(data.x[i - 1], data.y[i - 1], 5, 0, 2 * Math.PI);
       context.fill();
@@ -189,201 +178,71 @@ function fillFunction() {
 }
 
 // Flood fill algorithm //
-function floodFill(dataX, dataY, dataColor) {
-  // Grab color of spot being clicked //
-  originalColor = context.getImageData(dataX, dataY, 1, 1).data;
+// Stack-based recursive implementation (four-way) //
+function floodFill(x, y, color) {
+  canvasStack = [{x:x, y:y}];
+  canvasPixels = context.getImageData(0, 0, canvas.width, canvas.height);
+  // Grab color of coordinate clicked //
+  var imageCoords = (y * canvas.width + x) * 4;
   originalColor = {
-    r: originalColor[0],
-    g: originalColor[1],
-    b: originalColor[2],
-    a: originalColor[3]
+    r: canvasPixels.data[imageCoords],
+    g: canvasPixels.data[imageCoords + 1],
+    b: canvasPixels.data[imageCoords + 2],
+    a: canvasPixels.data[imageCoords + 3]
   };
-  x = dataX;
-  y = dataY;
-  // Only call algorithm if the area selected is a different color from the desired paint fill //
-  if (
-    originalColor.r != dataColor.r ||
-    originalColor.g != dataColor.g ||
-    originalColor.b != dataColor.b ||
-    originalColor.a != dataColor.a
-  ) {
-    // Set area to check //
-    searchArea = context.getImageData(0, 0, canvas.width, canvas.height);
-    // Go up from original point until finding a boundary //
-    // Use linear coordinates //
-    linearCoords = (y * canvas.width + x) * 4;
-    var done = false;
-    while (y >= 0 && !done) {
-      // Update position //
-      var newLinearCoords = ((y - 1) * canvas.width + x) * 4;
-      // Check for no boundary //
-      if (
-        searchArea.data[newLinearCoords] == originalColor.r &&
-        searchArea.data[newLinearCoords + 1] == originalColor.g &&
-        searchArea.data[newLinearCoords + 2] == originalColor.b &&
-        searchArea.data[newLinearCoords + 3] == originalColor.a
-      ) {
-        y = y - 1;
-        linearCoords = newLinearCoords;
-      } else {
-        done = true;
+  // Only fill if the original color is different from the selected fill color //
+  if ((color.r != originalColor.r) || (color.g != originalColor.g) || (color.b != originalColor.b) || (color.a != originalColor.a)) {
+    while (canvasStack.length > 0) {
+      // Shift new points from the stack //
+      newPixel = canvasStack.shift();
+      x = newPixel.x;
+      y = newPixel.y;
+      imageCoords = (y * canvas.width + x) * 4;
+      // Start checking downwards //
+      while ((y-- >= 0) && ((canvasPixels.data[imageCoords] == originalColor.r) && (canvasPixels.data[imageCoords + 1] == originalColor.g) && (canvasPixels.data[imageCoords + 2] == originalColor.b) && (canvasPixels.data[imageCoords + 3] == originalColor.a))) {
+        imageCoords -= canvas.width * 4;
       }
-    }
-    // Loop around counter-clockwise until returning to starting position //
-    // This essentially traces the outline of the boundary, and then fills it in //
-    var path = [{ x: x, y: y }];
-    var firstIteration = true;
-    var iterationCount = 0;
-    // 0 = up, 1 = left, 2 = down, 3 = right //
-    var orientation = 1;
-    while (
-      !(
-        path[path.length - 1].x == path[0].x &&
-        path[path.length - 1].y == path[0].y
-      ) ||
-      firstIteration
-    ) {
-      iterationCount++;
-      firstIteration = false;
-      var completed = false;
-      // Determine which direction we are currently pointing //
-      if (path.length >= 2) {
-        if (path[path.length - 1].y - path[path.length - 2].y < 0) {
-          orientation = 0;
-        } else if (path[path.length - 1].x - path[path.length - 2].x < 0) {
-          orientation = 1;
-        } else if (path[path.length - 1].y - path[path.length - 2].y > 0) {
-          orientation = 2;
-        } else if (path[path.length - 1].x - path[path.length - 2].x > 0) {
-          orientation = 3;
-        } else {
-          //
-        }
-      }
-      // Begin checking where to go next //
-      // If we can't find a place to go, change the direction and check again //
-      for (var i = 0; !completed && i <= 3; i++) {
-        var newOrientation = (orientation + i) % 4;
-        if (newOrientation == 0) {
-          // Try the right //
-          if (!completed && x + 1 < canvas.width) {
-            linearCoords = (y * canvas.width + (x + 1)) * 4;
-            if (
-              searchArea.data[linearCoords] == originalColor.r &&
-              searchArea.data[linearCoords + 1] == originalColor.g &&
-              searchArea.data[linearCoords + 2] == originalColor.b &&
-              searchArea.data[linearCoords + 3] == originalColor.a
-            ) {
-              completed = true;
-              x = x + 1;
+      imageCoords += canvas.width * 4;
+      y++;
+      // Start checking upwards //
+      var reached_left = false;
+      var reached_right = false;
+      // If pixel hasn't changed, replace it with the fill color //
+      while ((y++ < canvas.height) && ((canvasPixels.data[imageCoords] == originalColor.r) && (canvasPixels.data[imageCoords + 1] == originalColor.g) && (canvasPixels.data[imageCoords + 2] == originalColor.b) && (canvasPixels.data[imageCoords + 3] == originalColor.a))) {
+        canvasPixels.data[imageCoords]   = color.r;
+        canvasPixels.data[imageCoords + 1] = color.g;
+        canvasPixels.data[imageCoords + 2] = color.b;
+        canvasPixels.data[imageCoords + 3] = color.a;
+        // Check left //
+        if (x > 0) {
+          if ((canvasPixels.data[imageCoords - 4] == originalColor.r) && (canvasPixels.data[imageCoords - 4 + 1] == originalColor.g) && (canvasPixels.data[imageCoords - 4 + 2] == originalColor.b) && (canvasPixels.data[imageCoords - 4 + 3] == originalColor.a )) {
+            if (!reached_left) {
+              canvasStack.push({x:x - 1, y:y});
+              reached_left = true;
             }
           }
-        } else if (newOrientation == 1) {
-          // Try up //
-          if (!completed && y - 1 >= 0) {
-            linearCoords = ((y - 1) * canvas.width + x) * 4;
-            if (
-              searchArea.data[linearCoords] == originalColor.r &&
-              searchArea.data[linearCoords + 1] == originalColor.g &&
-              searchArea.data[linearCoords + 2] == originalColor.b &&
-              searchArea.data[linearCoords + 3] == originalColor.a
-            ) {
-              completed = true;
-              y = y - 1;
-            }
-          }
-        } else if (newOrientation == 2) {
-          // Try the left //
-          if (!completed && x - 1 >= 0) {
-            linearCoords = (y * canvas.width + (x - 1)) * 4;
-            if (
-              searchArea.data[linearCoords] == originalColor.r &&
-              searchArea.data[linearCoords + 1] == originalColor.g &&
-              searchArea.data[linearCoords + 2] == originalColor.b &&
-              searchArea.data[linearCoords + 3] == originalColor.a
-            ) {
-              completed = true;
-              x = x - 1;
-            }
-          }
-        } else if (newOrientation == 3) {
-          // Try down //
-          if (!completed && y + 1 < canvas.height) {
-            linearCoords = ((y + 1) * canvas.width + x) * 4;
-            if (
-              searchArea.data[linearCoords] == originalColor.r &&
-              searchArea.data[linearCoords + 1] == originalColor.g &&
-              searchArea.data[linearCoords + 2] == originalColor.b &&
-              searchArea.data[linearCoords + 3] == originalColor.a
-            ) {
-              completed = true;
-              y = y + 1;
-            }
+          else if (reached_left) {
+            reached_left = false;
           }
         }
-      }
-      // If possible, continue the path //
-      if (completed) {
-        path.push({ x: x, y: y });
+        // Check right //
+        if (x < canvas.width - 1) {
+          if ((canvasPixels.data[imageCoords + 4] == originalColor.r) && (canvasPixels.data[imageCoords + 4 + 1] == originalColor.g) && (canvasPixels.data[imageCoords + 4 + 2] == originalColor.b) && (canvasPixels.data[imageCoords + 4 + 3] == originalColor.a)) {
+            if (!reached_right) {
+              canvasStack.push({x:x + 1, y:y});
+              reached_right = true;
+            }
+          }
+          else if (reached_right) {
+            reached_right = false;
+          }
+        }
+        imageCoords += canvas.width * 4;
       }
     }
-    // Once done, draw the quadratic curve, and fill it with the chosen color //
-    drawQuadCurve(path, context, dataColor, 5, dataColor);
   }
-}
-
-// Draw quadratic curve function //
-function drawQuadCurve(path, context, color, thickness, fillColor) {
-  // Reformat RGBa color values for HTML5 drawing //
-  color =
-    "rgba( " + color.r + "," + color.g + "," + color.b + "," + color.a + ")";
-  fillColor =
-    "rgba( " +
-    fillColor.r +
-    "," +
-    fillColor.g +
-    "," +
-    fillColor.b +
-    "," +
-    fillColor.a +
-    ")";
-  context.strokeStyle = color;
-  context.fillStyle = fillColor;
-  context.lineWidth = thickness;
-  context.lineJoin = "round";
-  context.lineCap = "round";
-  if (path.length > 0) {
-    // If path just two points, draw a circle instead //
-    if (path.length < 3) {
-      var b = path[0];
-      context.beginPath();
-      context.arc(b.x, b.y, context.lineWidth / 2, 0, Math.PI * 2, !0);
-      context.fill();
-      context.closePath();
-    } else {
-      context.beginPath();
-      // Start curve //
-      context.moveTo(path[0].x, path[0].y);
-      // Draw curve to each point along the path //
-      for (var i = 1; i < path.length - 2; i++) {
-        var c = (path[i].x + path[i + 1].x) / 2;
-        var d = (path[i].y + path[i + 1].y) / 2;
-        context.quadraticCurveTo(path[i].x, path[i].y, c, d);
-      }
-      // Close path //
-      context.quadraticCurveTo(
-        path[i].x,
-        path[i].y,
-        path[i + 1].x,
-        path[i + 1].y
-      );
-      context.stroke();
-    }
-  }
-  // Fill curve //
-  if (fillColor !== false) {
-    context.fill();
-  }
+  // Fill the canvas with the specified pixel data //
+  context.putImageData(canvasPixels, 0, 0);
 }
 
 // Adapted from https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb //
