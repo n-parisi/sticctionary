@@ -2,7 +2,7 @@
 // Initialization //
 ////////////////////
 var socket = io();
-socket.on('message', function(data) {
+socket.on("message", function(data) {
   console.log(data);
 });
 var drawer = {
@@ -11,7 +11,7 @@ var drawer = {
   y: 0,
   clearing: false,
   filling: false,
-  myColor: 'black'
+  myColor: "black"
 };
 var lastDrawer = {
   clicking: false,
@@ -19,47 +19,50 @@ var lastDrawer = {
   y: 0,
   clearing: true,
   filling: false,
-  myColor: 'black'
+  myColor: "black"
 };
 var justCleared = false;
 var justClicked = false;
 var justFilled = false;
-var colorpicker = document.getElementById('colorBtn');
-var canvas = document.getElementById('canvas');
+var colorpicker = document.getElementById("colorBtn");
+var canvas = document.getElementById("canvas");
 canvas.width = 800;
 canvas.height = 600;
 var last_data_size = 1;
-var context = canvas.getContext('2d');
+var context = canvas.getContext("2d");
 var justFilledX = 0;
 var justFilledY = 0;
 
 /////////////////////
 // Event Listeners //
 /////////////////////
+//buttons
+document.getElementById("clearBtn").onclick = clearFunction;
+document.getElementById("fillBtn").onclick = fillFunction;
 
 // Pressing the mouse //
-document.addEventListener('mousedown', function(event) {
+document.addEventListener("mousedown", function(event) {
   switch (event.button) {
     case 0:
       drawer.clicking = true;
       justClicked = true;
-    break;
-  default:
-    break;
+      break;
+    default:
+      break;
   }
 });
 // Releasing the mouse //
-document.addEventListener('mouseup', function(event) {
+document.addEventListener("mouseup", function(event) {
   switch (event.button) {
     case 0:
-    drawer.clicking = false;
-    break;
+      drawer.clicking = false;
+      break;
     default:
-    break;
+      break;
   }
 });
 // General mouse tracking //
-document.addEventListener('mousemove', function(event) {
+document.addEventListener("mousemove", function(event) {
   drawer.x = event.clientX - 10;
   drawer.y = event.clientY - 10;
 });
@@ -69,14 +72,21 @@ document.addEventListener('mousemove', function(event) {
 /////////////////
 
 // New player joined //
-socket.emit('new player');
+socket.emit("new player");
 // Send drawer information every 10ms //
 setInterval(function() {
   // Grab color value from color picker //
-  drawer.myColor = colorpicker.value;
+  drawer.myColor = colorpicker.options[colorpicker.selectedIndex].value;
   if (justClicked) {
-    if ((drawer.clicking != lastDrawer.clicking) || (drawer.x != lastDrawer.x) || (drawer.y != lastDrawer.y) || (drawer.clearing != lastDrawer.clearing) || (drawer.filling != lastDrawer.filling) || (drawer.myColor != lastDrawer.myColor)) {
-      socket.emit('drawer', drawer);
+    if (
+      drawer.clicking != lastDrawer.clicking ||
+      drawer.x != lastDrawer.x ||
+      drawer.y != lastDrawer.y ||
+      drawer.clearing != lastDrawer.clearing ||
+      drawer.filling != lastDrawer.filling ||
+      drawer.myColor != lastDrawer.myColor
+    ) {
+      socket.emit("drawer", drawer);
     }
     if (!drawer.clicking) {
       justClicked = false;
@@ -95,7 +105,7 @@ setInterval(function() {
   lastDrawer.y = drawer.y;
   lastDrawer.clearing = drawer.clearing;
   lastDrawer.filling = drawer.filling;
-  lastDrawer.myColor = drawer.myColor
+  lastDrawer.myColor = drawer.myColor;
 }, 10);
 
 ////////////////////
@@ -103,14 +113,21 @@ setInterval(function() {
 ////////////////////
 
 // Game state //
-socket.on('state', function(data) {
+socket.on("state", function(data) {
   // Only draw the last two points, prevents redrawing all points //
-  if (data.x.length == 0) { context.clearRect(0, 0, canvas.width, canvas.height); }
-  for (i = last_data_size - 2; i <= (data.x.length); i++)
-  {
+  if (data.x.length == 0) {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  for (i = last_data_size - 2; i <= data.x.length; i++) {
     // This uses the coordinates (0,0) to designate the end of a line segment //
     // This checks to make sure neither of the two points are the end of a segment //
-    if ((data.x[i] != -1) && (data.y[i] != -1) && (data.x[i - 1] != -1) && (data.y[i - 1] != -1) && !data.beingFilled[i]) {
+    if (
+      data.x[i] != -1 &&
+      data.y[i] != -1 &&
+      data.x[i - 1] != -1 &&
+      data.y[i - 1] != -1 &&
+      !data.beingFilled[i]
+    ) {
       context.strokeStyle = data.colors[i];
       context.fillStyle = data.colors[i];
       context.lineWidth = 10;
@@ -124,13 +141,23 @@ socket.on('state', function(data) {
       context.beginPath();
       context.arc(data.x[i - 1], data.y[i - 1], 5, 0, 2 * Math.PI);
       context.fill();
-    }
-    else if ((data.x[i] != -1) && (data.y[i] != -1) && (data.x[i - 1] == -1) && (data.y[i - 1] == -1) && !data.beingFilled[i]) {
+    } else if (
+      data.x[i] != -1 &&
+      data.y[i] != -1 &&
+      data.x[i - 1] == -1 &&
+      data.y[i - 1] == -1 &&
+      !data.beingFilled[i]
+    ) {
       context.beginPath();
       context.arc(data.x[i], data.y[i], 5, 0, 2 * Math.PI);
       context.fill();
-    }
-    else if ((data.x[i] == -1) && (data.y[i] == -1) && (data.x[i - 1] != -1) && (data.y[i - 1] != -1) && !data.beingFilled[i]) {
+    } else if (
+      data.x[i] == -1 &&
+      data.y[i] == -1 &&
+      data.x[i - 1] != -1 &&
+      data.y[i - 1] != -1 &&
+      !data.beingFilled[i]
+    ) {
       context.beginPath();
       context.arc(data.x[i - 1], data.y[i - 1], 5, 0, 2 * Math.PI);
       context.fill();
@@ -143,8 +170,7 @@ socket.on('state', function(data) {
   }
   if (data.beingFilled[data.x.length - 1]) {
     last_data_size = data.x.length + 2;
-  }
-  else {
+  } else {
     last_data_size = data.x.length;
   }
 });
@@ -165,103 +191,131 @@ function fillFunction() {
 // Flood fill algorithm //
 function floodFill(dataX, dataY, dataColor) {
   // Grab color of spot being clicked //
-  originalColor = context.getImageData(dataX, dataY, 1, 1).data ;
+  originalColor = context.getImageData(dataX, dataY, 1, 1).data;
   originalColor = {
-    r:originalColor[0],
-    g:originalColor[1],
-    b:originalColor[2],
-    a:originalColor[3]
+    r: originalColor[0],
+    g: originalColor[1],
+    b: originalColor[2],
+    a: originalColor[3]
   };
   x = dataX;
   y = dataY;
   // Only call algorithm if the area selected is a different color from the desired paint fill //
-  if ((originalColor.r != dataColor.r) || (originalColor.g != dataColor.g) || (originalColor.b != dataColor.b) || (originalColor.a != dataColor.a)) {
+  if (
+    originalColor.r != dataColor.r ||
+    originalColor.g != dataColor.g ||
+    originalColor.b != dataColor.b ||
+    originalColor.a != dataColor.a
+  ) {
     // Set area to check //
     searchArea = context.getImageData(0, 0, canvas.width, canvas.height);
     // Go up from original point until finding a boundary //
     // Use linear coordinates //
-    linearCoords = ((y) * canvas.width + x) * 4;
-    var done = false ;
-    while((y >= 0) && (!done)) {
+    linearCoords = (y * canvas.width + x) * 4;
+    var done = false;
+    while (y >= 0 && !done) {
       // Update position //
       var newLinearCoords = ((y - 1) * canvas.width + x) * 4;
       // Check for no boundary //
-      if ((searchArea.data[newLinearCoords] == originalColor.r) && (searchArea.data[newLinearCoords + 1] == originalColor.g) && (searchArea.data[newLinearCoords + 2] == originalColor.b) && (searchArea.data[newLinearCoords+3]==originalColor.a)) {
+      if (
+        searchArea.data[newLinearCoords] == originalColor.r &&
+        searchArea.data[newLinearCoords + 1] == originalColor.g &&
+        searchArea.data[newLinearCoords + 2] == originalColor.b &&
+        searchArea.data[newLinearCoords + 3] == originalColor.a
+      ) {
         y = y - 1;
         linearCoords = newLinearCoords;
-      }
-      else {
+      } else {
         done = true;
       }
     }
     // Loop around counter-clockwise until returning to starting position //
     // This essentially traces the outline of the boundary, and then fills it in //
-    var path = [{x:x, y:y}];
+    var path = [{ x: x, y: y }];
     var firstIteration = true;
     var iterationCount = 0;
     // 0 = up, 1 = left, 2 = down, 3 = right //
     var orientation = 1;
-    while (!((path[path.length - 1].x == path[0].x) && (path[path.length - 1].y == path[0].y)) || (firstIteration)) {
+    while (
+      !(
+        path[path.length - 1].x == path[0].x &&
+        path[path.length - 1].y == path[0].y
+      ) ||
+      firstIteration
+    ) {
       iterationCount++;
       firstIteration = false;
       var completed = false;
       // Determine which direction we are currently pointing //
-      if(path.length >= 2) {
+      if (path.length >= 2) {
         if (path[path.length - 1].y - path[path.length - 2].y < 0) {
           orientation = 0;
-        }
-        else if (path[path.length - 1].x - path[path.length - 2].x < 0) {
+        } else if (path[path.length - 1].x - path[path.length - 2].x < 0) {
           orientation = 1;
-        }
-        else if (path[path.length - 1].y - path[path.length - 2].y > 0) {
+        } else if (path[path.length - 1].y - path[path.length - 2].y > 0) {
           orientation = 2;
-        }
-        else if (path[path.length - 1].x - path[path.length - 2].x > 0) {
+        } else if (path[path.length - 1].x - path[path.length - 2].x > 0) {
           orientation = 3;
-        }
-        else {
+        } else {
           //
         }
       }
       // Begin checking where to go next //
       // If we can't find a place to go, change the direction and check again //
-      for (var i = 0; (!completed) && (i <= 3); i++) {
+      for (var i = 0; !completed && i <= 3; i++) {
         var newOrientation = (orientation + i) % 4;
         if (newOrientation == 0) {
           // Try the right //
-          if ((!completed) && (x + 1 < canvas.width)) {
+          if (!completed && x + 1 < canvas.width) {
             linearCoords = (y * canvas.width + (x + 1)) * 4;
-            if ((searchArea.data[linearCoords] == originalColor.r) && (searchArea.data[linearCoords + 1] == originalColor.g) && (searchArea.data[linearCoords + 2] == originalColor.b) && (searchArea.data[linearCoords + 3] == originalColor.a)) {
+            if (
+              searchArea.data[linearCoords] == originalColor.r &&
+              searchArea.data[linearCoords + 1] == originalColor.g &&
+              searchArea.data[linearCoords + 2] == originalColor.b &&
+              searchArea.data[linearCoords + 3] == originalColor.a
+            ) {
               completed = true;
               x = x + 1;
             }
           }
-        }
-        else if (newOrientation == 1) {
+        } else if (newOrientation == 1) {
           // Try up //
-          if ((!completed) && (y - 1 >= 0)) {
+          if (!completed && y - 1 >= 0) {
             linearCoords = ((y - 1) * canvas.width + x) * 4;
-            if ((searchArea.data[linearCoords] == originalColor.r) && (searchArea.data[linearCoords + 1] == originalColor.g) && (searchArea.data[linearCoords + 2] == originalColor.b) && (searchArea.data[linearCoords + 3] == originalColor.a)) {
+            if (
+              searchArea.data[linearCoords] == originalColor.r &&
+              searchArea.data[linearCoords + 1] == originalColor.g &&
+              searchArea.data[linearCoords + 2] == originalColor.b &&
+              searchArea.data[linearCoords + 3] == originalColor.a
+            ) {
               completed = true;
               y = y - 1;
             }
           }
-        }
-        else if (newOrientation == 2) {
+        } else if (newOrientation == 2) {
           // Try the left //
-          if ((!completed) && (x - 1 >= 0)) {
+          if (!completed && x - 1 >= 0) {
             linearCoords = (y * canvas.width + (x - 1)) * 4;
-            if ((searchArea.data[linearCoords] == originalColor.r) && (searchArea.data[linearCoords + 1] == originalColor.g) && (searchArea.data[linearCoords + 2] == originalColor.b) && (searchArea.data[linearCoords + 3] == originalColor.a)) {
+            if (
+              searchArea.data[linearCoords] == originalColor.r &&
+              searchArea.data[linearCoords + 1] == originalColor.g &&
+              searchArea.data[linearCoords + 2] == originalColor.b &&
+              searchArea.data[linearCoords + 3] == originalColor.a
+            ) {
               completed = true;
               x = x - 1;
             }
           }
-        }
-        else if (newOrientation == 3) {
+        } else if (newOrientation == 3) {
           // Try down //
-          if((!completed) && (y + 1 < canvas.height)) {
+          if (!completed && y + 1 < canvas.height) {
             linearCoords = ((y + 1) * canvas.width + x) * 4;
-            if ((searchArea.data[linearCoords] == originalColor.r) && (searchArea.data[linearCoords + 1] == originalColor.g) && (searchArea.data[linearCoords + 2] == originalColor.b) && (searchArea.data[linearCoords + 3] == originalColor.a)) {
+            if (
+              searchArea.data[linearCoords] == originalColor.r &&
+              searchArea.data[linearCoords + 1] == originalColor.g &&
+              searchArea.data[linearCoords + 2] == originalColor.b &&
+              searchArea.data[linearCoords + 3] == originalColor.a
+            ) {
               completed = true;
               y = y + 1;
             }
@@ -269,8 +323,8 @@ function floodFill(dataX, dataY, dataColor) {
         }
       }
       // If possible, continue the path //
-      if( completed ) {
-        path.push({x:x, y:y});
+      if (completed) {
+        path.push({ x: x, y: y });
       }
     }
     // Once done, draw the quadratic curve, and fill it with the chosen color //
@@ -278,11 +332,21 @@ function floodFill(dataX, dataY, dataColor) {
   }
 }
 
-// Draw quadratic curve function // 
+// Draw quadratic curve function //
 function drawQuadCurve(path, context, color, thickness, fillColor) {
   // Reformat RGBa color values for HTML5 drawing //
-  color = "rgba( " + color.r + "," + color.g + ","+ color.b + ","+ color.a + ")";
-  fillColor = "rgba( " + fillColor.r + "," + fillColor.g + ","+ fillColor.b + ","+ fillColor.a + ")";
+  color =
+    "rgba( " + color.r + "," + color.g + "," + color.b + "," + color.a + ")";
+  fillColor =
+    "rgba( " +
+    fillColor.r +
+    "," +
+    fillColor.g +
+    "," +
+    fillColor.b +
+    "," +
+    fillColor.a +
+    ")";
   context.strokeStyle = color;
   context.fillStyle = fillColor;
   context.lineWidth = thickness;
@@ -296,8 +360,7 @@ function drawQuadCurve(path, context, color, thickness, fillColor) {
       context.arc(b.x, b.y, context.lineWidth / 2, 0, Math.PI * 2, !0);
       context.fill();
       context.closePath();
-    }
-    else {
+    } else {
       context.beginPath();
       // Start curve //
       context.moveTo(path[0].x, path[0].y);
@@ -308,12 +371,17 @@ function drawQuadCurve(path, context, color, thickness, fillColor) {
         context.quadraticCurveTo(path[i].x, path[i].y, c, d);
       }
       // Close path //
-      context.quadraticCurveTo(path[i].x, path[i].y, path[i + 1].x, path[i + 1].y);
+      context.quadraticCurveTo(
+        path[i].x,
+        path[i].y,
+        path[i + 1].x,
+        path[i + 1].y
+      );
       context.stroke();
     }
   }
   // Fill curve //
-  if (fillColor !== false ) {
+  if (fillColor !== false) {
     context.fill();
   }
 }
@@ -321,36 +389,40 @@ function drawQuadCurve(path, context, color, thickness, fillColor) {
 // Adapted from https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb //
 function colorToRBGa(color) {
   // Hex notation //
-  if(color[0] == "#") {
+  if (color[0] == "#") {
     color = color.replace("#", "");
     var bigint = parseInt(color, 16);
     var r = (bigint >> 16) & 255;
     var g = (bigint >> 8) & 255;
     var b = bigint & 255;
     return {
-      r:r,
-      g:g,
-      b:b,
-      a:255
+      r: r,
+      g: g,
+      b: b,
+      a: 255
     };
   }
   // RBGa notation //
   else if (color.indexOf("rgba(") == 0) {
-    color = color.replace("rgba(", "").replace(" ", "").replace(")", "").split(",");
+    color = color
+      .replace("rgba(", "")
+      .replace(" ", "")
+      .replace(")", "")
+      .split(",");
     return {
-      r:color[0],
-      g:color[1],
-      b:color[2],
-      a:color[3] * 255
+      r: color[0],
+      g: color[1],
+      b: color[2],
+      a: color[3] * 255
     };
-  } 
+  }
   // Error //
   else {
     return {
-      r:0,
-      g:0,
-      b:0,
-      a:0
+      r: 0,
+      g: 0,
+      b: 0,
+      a: 0
     };
   }
 }

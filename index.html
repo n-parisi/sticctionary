@@ -1,20 +1,31 @@
 <html>
   <head>
     <title>Sticctionary</title>
-    <style>
-      canvas {
-        width: 800px;
-        height: 600px;
-        border: 5px solid black;
-      }
-    </style>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/purecss@1.0.0/build/pure-min.css"
+      integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" type="text/css" href="static/style.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="/socket.io/socket.io.js"></script>
   </head>
   <body>
-    <canvas id="canvas"></canvas>
-	<input type="button" id="clearBtn" onclick="clearFunction()" value="Clear">
-	<input type="color" id="colorBtn">
-	<input type="button" id="fillBtn" onclick="fillFunction()" value="Fill">
+    <div class="pure-g">
+      <div class="pure-u-1-2"><canvas id="canvas"></canvas></div>
+    </div>
+    <div class="pure-g">
+      <div class="pure-u-1-2 option-bar">
+        <button class="pure-button clear-button" id="clearBtn">Clear</button>
+        <button class="pure-button fill-button" id="fillBtn">Fill</button>
+        <select id="colorBtn">
+          <option selected value="#000000">Black</option>
+          <option value="#ff0000">Red</option>
+          <option value="#0000ff">Blue</option>
+        </select>
+      </div>
+    </div>
   </body>
   <script src="/static/game.js"></script>
 </html>
