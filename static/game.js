@@ -36,7 +36,7 @@ var justFilledY = 0;
 /////////////////////
 // Event Listeners //
 /////////////////////
-//buttons
+// Button listeners
 document.getElementById("clearBtn").onclick = clearFunction;
 document.getElementById("fillBtn").onclick = fillFunction;
 
@@ -76,7 +76,7 @@ socket.emit("new player");
 // Send drawer information every 10ms //
 setInterval(function() {
   // Grab color value from color picker //
-  drawer.myColor = colorpicker.options[colorpicker.selectedIndex].value;
+  drawer.myColor = colorpicker.value;
   if (justClicked) {
     if (
       drawer.clicking != lastDrawer.clicking ||
@@ -121,7 +121,14 @@ socket.on("state", function(data) {
   for (i = last_data_size - 2; i <= data.x.length; i++) {
     // This uses the coordinates (0,0) to designate the end of a line segment //
     // This checks to make sure neither of the two points are the end of a segment //
-    if ((data.x[i] != -1) && (data.y[i] != -1) && (data.x[i - 1] != -1) && (data.y[i - 1] != -1) && !data.beingFilled[i] && !data.beingFilled[i - 1])  {
+    if (
+      data.x[i] != -1 &&
+      data.y[i] != -1 &&
+      data.x[i - 1] != -1 &&
+      data.y[i - 1] != -1 &&
+      !data.beingFilled[i] &&
+      !data.beingFilled[i - 1]
+    ) {
       context.strokeStyle = data.colors[i];
       context.fillStyle = data.colors[i];
       context.lineWidth = 10;
@@ -145,8 +152,13 @@ socket.on("state", function(data) {
       context.beginPath();
       context.arc(data.x[i], data.y[i], 5, 0, 2 * Math.PI);
       context.fill();
-    }
-    else if ((data.x[i] == -1) && (data.y[i] == -1) && (data.x[i - 1] != -1) && (data.y[i - 1] != -1) && !data.beingFilled[i - 1]) {
+    } else if (
+      data.x[i] == -1 &&
+      data.y[i] == -1 &&
+      data.x[i - 1] != -1 &&
+      data.y[i - 1] != -1 &&
+      !data.beingFilled[i - 1]
+    ) {
       context.beginPath();
       context.arc(data.x[i - 1], data.y[i - 1], 5, 0, 2 * Math.PI);
       context.fill();
@@ -180,7 +192,7 @@ function fillFunction() {
 // Flood fill algorithm //
 // Stack-based recursive implementation (four-way) //
 function floodFill(x, y, color) {
-  canvasStack = [{x:x, y:y}];
+  canvasStack = [{ x: x, y: y }];
   canvasPixels = context.getImageData(0, 0, canvas.width, canvas.height);
   // Grab color of coordinate clicked //
   var imageCoords = (y * canvas.width + x) * 4;
@@ -191,7 +203,12 @@ function floodFill(x, y, color) {
     a: canvasPixels.data[imageCoords + 3]
   };
   // Only fill if the original color is different from the selected fill color //
-  if ((color.r != originalColor.r) || (color.g != originalColor.g) || (color.b != originalColor.b) || (color.a != originalColor.a)) {
+  if (
+    color.r != originalColor.r ||
+    color.g != originalColor.g ||
+    color.b != originalColor.b ||
+    color.a != originalColor.a
+  ) {
     while (canvasStack.length > 0) {
       // Shift new points from the stack //
       newPixel = canvasStack.shift();
@@ -199,7 +216,13 @@ function floodFill(x, y, color) {
       y = newPixel.y;
       imageCoords = (y * canvas.width + x) * 4;
       // Start checking downwards //
-      while ((y-- >= 0) && ((canvasPixels.data[imageCoords] == originalColor.r) && (canvasPixels.data[imageCoords + 1] == originalColor.g) && (canvasPixels.data[imageCoords + 2] == originalColor.b) && (canvasPixels.data[imageCoords + 3] == originalColor.a))) {
+      while (
+        y-- >= 0 &&
+        (canvasPixels.data[imageCoords] == originalColor.r &&
+          canvasPixels.data[imageCoords + 1] == originalColor.g &&
+          canvasPixels.data[imageCoords + 2] == originalColor.b &&
+          canvasPixels.data[imageCoords + 3] == originalColor.a)
+      ) {
         imageCoords -= canvas.width * 4;
       }
       imageCoords += canvas.width * 4;
@@ -208,32 +231,46 @@ function floodFill(x, y, color) {
       var reached_left = false;
       var reached_right = false;
       // If pixel hasn't changed, replace it with the fill color //
-      while ((y++ < canvas.height) && ((canvasPixels.data[imageCoords] == originalColor.r) && (canvasPixels.data[imageCoords + 1] == originalColor.g) && (canvasPixels.data[imageCoords + 2] == originalColor.b) && (canvasPixels.data[imageCoords + 3] == originalColor.a))) {
-        canvasPixels.data[imageCoords]   = color.r;
+      while (
+        y++ < canvas.height &&
+        (canvasPixels.data[imageCoords] == originalColor.r &&
+          canvasPixels.data[imageCoords + 1] == originalColor.g &&
+          canvasPixels.data[imageCoords + 2] == originalColor.b &&
+          canvasPixels.data[imageCoords + 3] == originalColor.a)
+      ) {
+        canvasPixels.data[imageCoords] = color.r;
         canvasPixels.data[imageCoords + 1] = color.g;
         canvasPixels.data[imageCoords + 2] = color.b;
         canvasPixels.data[imageCoords + 3] = color.a;
         // Check left //
         if (x > 0) {
-          if ((canvasPixels.data[imageCoords - 4] == originalColor.r) && (canvasPixels.data[imageCoords - 4 + 1] == originalColor.g) && (canvasPixels.data[imageCoords - 4 + 2] == originalColor.b) && (canvasPixels.data[imageCoords - 4 + 3] == originalColor.a )) {
+          if (
+            canvasPixels.data[imageCoords - 4] == originalColor.r &&
+            canvasPixels.data[imageCoords - 4 + 1] == originalColor.g &&
+            canvasPixels.data[imageCoords - 4 + 2] == originalColor.b &&
+            canvasPixels.data[imageCoords - 4 + 3] == originalColor.a
+          ) {
             if (!reached_left) {
-              canvasStack.push({x:x - 1, y:y});
+              canvasStack.push({ x: x - 1, y: y });
               reached_left = true;
             }
-          }
-          else if (reached_left) {
+          } else if (reached_left) {
             reached_left = false;
           }
         }
         // Check right //
         if (x < canvas.width - 1) {
-          if ((canvasPixels.data[imageCoords + 4] == originalColor.r) && (canvasPixels.data[imageCoords + 4 + 1] == originalColor.g) && (canvasPixels.data[imageCoords + 4 + 2] == originalColor.b) && (canvasPixels.data[imageCoords + 4 + 3] == originalColor.a)) {
+          if (
+            canvasPixels.data[imageCoords + 4] == originalColor.r &&
+            canvasPixels.data[imageCoords + 4 + 1] == originalColor.g &&
+            canvasPixels.data[imageCoords + 4 + 2] == originalColor.b &&
+            canvasPixels.data[imageCoords + 4 + 3] == originalColor.a
+          ) {
             if (!reached_right) {
-              canvasStack.push({x:x + 1, y:y});
+              canvasStack.push({ x: x + 1, y: y });
               reached_right = true;
             }
-          }
-          else if (reached_right) {
+          } else if (reached_right) {
             reached_right = false;
           }
         }
